@@ -1,1 +1,3 @@
 # Class-Dao-Project
+
+More information about the DAO project are about to be uploaded soon...
