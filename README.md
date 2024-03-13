@@ -42,6 +42,3 @@ foundryup
 ```
 
 More information about how to install Foundry are available [here](https://ethereum-blockchain-developer.com/2022-06-nft-truffle-hardhat-foundry/14-foundry-setup/).
-
-
-
