@@ -1,5 +1,3 @@
-# Class DAO Project
-
 ### 1. Project Description
 
 The Digital Economics DAO projects consists in deploying our own ERC standard onto the testnet.
