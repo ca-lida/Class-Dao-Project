@@ -1,4 +1,4 @@
-# Class DAO Project
+# Class DAO Project - Dauphine 24 Digital Economics
 
 ### 1. Project Description
 
@@ -79,3 +79,4 @@ forge test --list --json --match-test "testFail*" | tail -n 1 | json_pp
 ```
 
 More information on the tests with Foundry are available [here](https://book.getfoundry.sh/reference/forge/forge-test)
+
