@@ -1,19 +1,82 @@
 # Class DAO Project - Dauphine 24 Digital Economics
 
-The Role of this Decentralised Autonomous Organisation is to roleplay as a governance system for our version of a Model UN focused on funding/policy proposals that solve Climate Change.
+### 1. Project Description
 
-Our Working is split between the Token team and Governance team. 
+The Digital Economics DAO projects consists in deploying our own ERC standard onto the testnet.
 
-The token team has selected ERC 777 as the token of choice - with token transfer, token voting, and vote delegation.
-The governance team has selected XXX for YYY as its governance control process. 
-You can follow their branches for updates.
+This work is realised in a one week period and is executed under the Software Development Life Cycle framework. 
 
-# Solidity Files -- currently just ideas from the example DAO
+All students work in the same repository and are divided into 3 groups, the DevOps, Gouvernance, Token teams.
 
-### Votes.sol
+Discussions about the topic, token, etc. are ongoing so further information will be uploaded soon...
 
-### GovernanceVotes.sol
 
-### GovernorCountingSimple.sol & & GovernorVotesQuorumFraction.sol
+### 2. Installation and Execution
 
-### Governor.sol
+*Forge* is a state-of-the-art package for running tests, wrting codes and debugging it in Solidity environment.
+
+
+#### 2.1 Download Forge
+You can use *Forge* through a wider tool named *Foundry*. Here are the steps to install it into your computer. Open your terminal and follow these steps :
+
+Create a new repository named Foundry:
+```
+mkdir foundry
+```
+
+Enter into this new repository:
+```
+cd foundry
+```
+
+Verify the connectivity of Foundry with our system:
+```
+curl -L https://foundry.paradigm.xyz | bash
+```
+
+Let Bash re-read the file:
+```
+source ~/.bashrc 
+```
+
+Install Foundry :
+```
+foundryup
+```
+
+More information about how to install Foundry are available [here](https://ethereum-blockchain-developer.com/2022-06-nft-truffle-hardhat-foundry/14-foundry-setup/).
+
+
+#### 2.2 Make tests with Forge
+
+Here are some examples of how to run tests with *Forge* :
+
+Run the tests:
+```
+forge test
+```
+
+Open a test in the debugger:
+```
+forge test --debug testSomething
+```
+
+Generate a gas report:
+```
+forge test --gas-report
+```
+
+Only run tests in `test/Contract.t.sol in the BigTest contract that start with testFail:
+```
+forge test --match-path test/Contract.t.sol --match-contract BigTest \ --match-test "testFail*"
+```
+
+List tests in desired format
+```
+forge test --list
+forge test --list --json
+forge test --list --json --match-test "testFail*" | tail -n 1 | json_pp
+```
+
+More information on the tests with Foundry are available [here](https://book.getfoundry.sh/reference/forge/forge-test)
+
