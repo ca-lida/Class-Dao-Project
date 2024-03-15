@@ -9,11 +9,45 @@ import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 
 contract MyGovernor is Governor, GovernorCountingSimple, GovernorStorage, GovernorVotes, GovernorVotesQuorumFraction {
+    enum Category { Default, Special }
+    // Simplified tracking for the latest category 
+    Category private _lastProposalCategory = Category.Default;
+
     constructor(IVotes _token)
         Governor("MyGovernor")
         GovernorVotes(_token)
         GovernorVotesQuorumFraction(4)
     {}
+
+    // Dynamic voting delay based on category of proposal
+    function votingDelay() public view override returns (uint256) {
+        if (_lastProposalCategory == Category.Special) {
+            return 7200; // e.g., Special category delay
+        } else {
+            return 3600; // e.g., Default category delay
+        }
+    }
+
+    // Dynamic voting period based on category of proposal
+    function votingPeriod() public view override returns (uint256) {
+        if (_lastProposalCategory == Category.Special) {
+            return 50400; // e.g., Special category period
+        } else {
+            return 25200; // e.g., Default category period
+        }
+    }
+
+    // Proposal, but with category field and storage of it (to check carefully)
+    function proposeWithCategory(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description,
+        Category category 
+    ) public returns (uint256) {
+        _lastProposalCategory = category; // Set the last proposal category
+        return super.propose(targets, values, calldatas, description); // Use the base propose
+    }
 
     // Calculate the voting power based on the square of the number of tokens held by each voter
     function calculateVotingPower(address voter) internal view returns (uint256) {
@@ -33,24 +67,21 @@ contract MyGovernor is Governor, GovernorCountingSimple, GovernorStorage, Govern
         // Call the appropriate vote function based on your governance module
         super._vote(proposalId, voter, support, votingPower);
     }
-
-    function votingDelay() public pure override returns (uint256) {
-        return 7200; // 1 day
-    }
-
-    function votingPeriod() public pure override returns (uint256) {
-        return 50400; // 1 week
-    }
     
     // The following functions are overrides required by Solidity.
 
+    // Dynamic quorum based on category of proposal
     function quorum(uint256 blockNumber)
         public
         view
         override(Governor, GovernorVotesQuorumFraction)
         returns (uint256)
     {
-        return super.quorum(blockNumber);
+        if (_lastProposalCategory == Category.Special) {
+            return super.quorum(blockNumber) * 2; // e.g., Double the quorum for Special category
+        } else {
+            return super.quorum(blockNumber); // Default quorum
+        }
     }
 
     function _propose(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description, address proposer)
