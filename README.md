@@ -1,19 +1,42 @@
-# Class DAO Project - Dauphine 24 Digital Economics
+### 1. Project Description
 
-The Role of this Decentralised Autonomous Organisation is to roleplay as a governance system for our version of a Model UN focused on funding/policy proposals that solve Climate Change.
+The Digital Economics DAO projects consists in deploying our own ERC standard onto the testnet.
 
-Our Working is split between the Token team and Governance team. 
+This work is realised in a one week period and is executed under the Software Development Life Cycle framework. 
 
-The token team has selected ERC 777 as the token of choice - with token transfer, token voting, and vote delegation.
-The governance team has selected XXX for YYY as its governance control process. 
-You can follow their branches for updates.
+All students work in the same repository and are divided into 3 groups, the DevOps, Gouvernance, Token teams.
 
-# Solidity Files -- currently just ideas from the example DAO
+Discussions about the DAO project are ongoing so further information will be uploaded soon...
 
-### Votes.sol
+### 2. Installation and Execution
 
-### GovernanceVotes.sol
+*Forge* is a state-of-the-art package for running tests, wrting codes and debugging it in Solidity environment.
 
-### GovernorCountingSimple.sol & & GovernorVotesQuorumFraction.sol
+You can use *Forge* through a wider tool named *Foundry*. Here are the steps to install it into your computer. Open your terminal and follow these steps :
 
-### Governor.sol
+Create a new repository named Foundry:
+```
+mkdir foundry
+```
+
+Enter into this new repository:
+```
+cd foundry
+```
+
+Verify the connectivity of Foundry with our system:
+```
+curl -L https://foundry.paradigm.xyz | bash
+```
+
+Let Bash re-read the file:
+```
+source ~/.bashrc 
+```
+
+Install Foundry :
+```
+foundryup
+```
+
+More information about how to install Foundry are available [here](https://ethereum-blockchain-developer.com/2022-06-nft-truffle-hardhat-foundry/14-foundry-setup/).
