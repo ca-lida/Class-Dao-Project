@@ -7,17 +7,26 @@ import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol
 import "@openzeppelin/contracts/governance/extensions/GovernorStorage.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract MyGovernor is Governor, GovernorCountingSimple, GovernorStorage, GovernorVotes, GovernorVotesQuorumFraction {
+contract MyGovernor is Governor, GovernorCountingSimple, GovernorStorage, GovernorVotes, GovernorVotesQuorumFraction, AccessControl {
     enum Category { Default, Special }
+    enum ProposalType { Initial, Following }
     // Simplified tracking for the latest category 
     Category private _lastProposalCategory = Category.Default;
+
+    // Roles
+    bytes32 public constant COMITEE_ROLE = keccak256("COMITEE_ROLE");
+    bytes32 public constant COUNTRY_ROLE = keccak256("COUNTRY_ROLE");
 
     constructor(IVotes _token)
         Governor("MyGovernor")
         GovernorVotes(_token)
         GovernorVotesQuorumFraction(4)
-    {}
+    {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender); 
+        _setupRole(COMITEE_ROLE, msg.sender); 
+    }
 
     // Dynamic voting delay based on category of proposal
     function votingDelay() public view override returns (uint256) {
@@ -38,21 +47,39 @@ contract MyGovernor is Governor, GovernorCountingSimple, GovernorStorage, Govern
     }
 
     // Proposal, but with category field and storage of it (to check carefully)
-    function proposeWithCategory(
+    // Added the type of proposal : comitee can only propose initial proposals, and countries follow-up proposals
+    // Comitee is the only one who can propose to category "Special" (Sanctions)
+    function proposeWithCategoryAndType(
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description,
-        Category category 
+        Category category,
+        ProposalType proposalType
     ) public returns (uint256) {
-        _lastProposalCategory = category; // Set the last proposal category
-        return super.propose(targets, values, calldatas, description); // Use the base propose
+        // Check roles and proposal type
+        if (proposalType == ProposalType.Initial) {
+            require(hasRole(COMITEE_ROLE, msg.sender), "Caller does not have COMITEE role");
+        } else if (proposalType == ProposalType.Following) {
+            require(hasRole(COUNTRY_ROLE, msg.sender), "Caller does not have COUNTRY role");
+            require(category == Category.Default, "Following proposals must be Default category");
+        }
+
+        _lastProposalCategory = category;
+
+        return super.propose(targets, values, calldatas, description);
     }
 
-    // Calculate the voting power based on the square of the number of tokens held by each voter
-    function calculateVotingPower(address voter) internal view returns (uint256) {
-        uint256 balance = _token.balanceOf(voter);
-        return balance * balance; // Square the balance for quadratic voting
+    // Function to grant COMITEE role
+    function grantComiteeRole(address account) public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Caller is not an admin");
+        grantRole(COMITEE_ROLE, account);
+    }
+
+    // Function to revoke COMITEE role
+    function revokeComiteeRole(address account) public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Caller is not an admin");
+        revokeRole(COMITEE_ROLE, account);
     }
 
     // Override the _vote function to consider quadratic voting power
