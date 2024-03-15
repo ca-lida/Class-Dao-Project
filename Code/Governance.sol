@@ -2,29 +2,18 @@
 pragma solidity ^0.8.20;
 
 // Import necessary OpenZeppelin contracts
-import "node_modules/@openzeppelin/contracts/governance/Governor.sol";
-import "node_modules/@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
-import "node_modules/@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
-import "node_modules/@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
-import "node_modules/@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
-import "node_modules/@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
-import "node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "node_modules/@openzeppelin/contracts/governance/utils/IVotes.sol";
+import "@openzeppelin/contracts/governance/Governor.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorStorage.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 
-contract Governance is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
-    IVotes private _token; // Declared as a state variable
-
-    event VoteEmitted(uint256 indexed proposalId, address indexed voter, bool support, uint256 votingPower);
-
-    constructor(IVotes token, TimelockController timelock)
-        Governor("Governance")
-        GovernorSettings(7200 /* 1 day */, 50400 /* 1 week */, 0)
-        GovernorVotes(token)
+contract MyGovernor is Governor, GovernorCountingSimple, GovernorStorage, GovernorVotes, GovernorVotesQuorumFraction {
+    constructor(IVotes _token)
+        Governor("MyGovernor")
+        GovernorVotes(_token)
         GovernorVotesQuorumFraction(4)
-        GovernorTimelockControl(timelock)
-    {
-        _token = token; // Stored in the state variable
-    }
+    {}
 
     // Calculate the voting power based on the square of the number of tokens held by each voter
     function calculateVotingPower(address voter) internal view returns (uint256) {
@@ -44,27 +33,16 @@ contract Governance is Governor, GovernorSettings, GovernorCountingSimple, Gover
         // Call the appropriate vote function based on your governance module
         super._vote(proposalId, voter, support, votingPower);
     }
-    
+
+    function votingDelay() public pure override returns (uint256) {
+        return 7200; // 1 day
+    }
+
+    function votingPeriod() public pure override returns (uint256) {
+        return 50400; // 1 week
+    }
     
     // The following functions are overrides required by Solidity.
-
-    function votingDelay()
-        public
-        view
-        override(Governor, GovernorSettings)
-        returns (uint256)
-    {
-        return super.votingDelay();
-    }
-
-    function votingPeriod()
-        public
-        view
-        override(Governor, GovernorSettings)
-        returns (uint256)
-    {
-        return super.votingPeriod();
-    }
 
     function quorum(uint256 blockNumber)
         public
@@ -75,62 +53,11 @@ contract Governance is Governor, GovernorSettings, GovernorCountingSimple, Gover
         return super.quorum(blockNumber);
     }
 
-    function state(uint256 proposalId)
-        public
-        view
-        override(Governor, GovernorTimelockControl)
-        returns (ProposalState)
-    {
-        return super.state(proposalId);
-    }
-
-    function proposalNeedsQueuing(uint256 proposalId)
-        public
-        view
-        override(Governor, GovernorTimelockControl)
-        returns (bool)
-    {
-        return super.proposalNeedsQueuing(proposalId);
-    }
-
-    function proposalThreshold()
-        public
-        view
-        override(Governor, GovernorSettings)
+    function _propose(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description, address proposer)
+        internal
+        override(Governor, GovernorStorage)
         returns (uint256)
     {
-        return super.proposalThreshold();
-    }
-
-    function _queueOperations(uint256 proposalId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
-        internal
-        override(Governor, GovernorTimelockControl)
-        returns (uint48)
-    {
-        return super._queueOperations(proposalId, targets, values, calldatas, descriptionHash);
-    }
-
-    function _executeOperations(uint256 proposalId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
-        internal
-        override(Governor, GovernorTimelockControl)
-    {
-        super._executeOperations(proposalId, targets, values, calldatas, descriptionHash);
-    }
-
-    function _cancel(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
-        internal
-        override(Governor, GovernorTimelockControl)
-        returns (uint256)
-    {
-        return super._cancel(targets, values, calldatas, descriptionHash);
-    }
-
-    function _executor()
-        internal
-        view
-        override(Governor, GovernorTimelockControl)
-        returns (address)
-    {
-        return super._executor();
+        return super._propose(targets, values, calldatas, description, proposer);
     }
 }
