@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Class-Dao-Project
 
 Our DAO project, dubbed ClimateDAO, aims to simulate climate voting within the United Nations, akin to the Conference of the Parties (COP).
@@ -27,3 +28,24 @@ ClimateDAO breakdown:
 - Quadratic voting : If someone want to cast 1 vote it will cost 1 token, 2 votes cost 4 tokens, 3 votes costs 9 tokens...; 
 - TimeLock: when a new proposal is submitted to voting there is a block of 24h that need to pass before voting. ;
 - Technical committee can submit drafts of resolutions that in general require a simple majority quorum, except if it calls for economic sanctions and in this case the necessary quorum is 2/3.
+=======
+# Class DAO Project - Dauphine 24 Digital Economics
+
+The Role of this Decentralised Autonomous Organisation is to roleplay as a governance system for our version of a Model UN focused on funding/policy proposals that solve Climate Change.
+
+Our Working is split between the Token team and Governance team. 
+
+The token team has selected ERC 777 as the token of choice - with token transfer, token voting, and vote delegation.
+The governance team has selected XXX for YYY as its governance control process. 
+You can follow their branches for updates.
+
+# Solidity Files -- currently just ideas from the example DAO
+
+### Votes.sol
+
+### GovernanceVotes.sol
+
+### GovernorCountingSimple.sol & & GovernorVotesQuorumFraction.sol
+
+### Governor.sol
+>>>>>>> 1504220ed0294fdd9b5f82e54afa9c213b0577de
