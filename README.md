@@ -10,9 +10,11 @@ All students work in the same repository and are divided into 3 groups, the DevO
 
 Discussions about the topic, token, etc. are ongoing so further information will be uploaded soon...
 
+
 ### 2. Installation and Execution
 
 *Forge* is a state-of-the-art package for running tests, wrting codes and debugging it in Solidity environment.
+
 
 #### 2.1 Download Forge
 You can use *Forge* through a wider tool named *Foundry*. Here are the steps to install it into your computer. Open your terminal and follow these steps :
@@ -43,6 +45,7 @@ foundryup
 ```
 
 More information about how to install Foundry are available [here](https://ethereum-blockchain-developer.com/2022-06-nft-truffle-hardhat-foundry/14-foundry-setup/).
+
 
 #### 2.2 Make tests with Forge
 
