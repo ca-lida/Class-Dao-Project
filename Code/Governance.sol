@@ -13,7 +13,9 @@ contract ProposalVoting is Ownable {
     using Math for uint256;
 
     struct Proposal {
-        uint256 votes; // Total number of votes received for the proposal
+        uint256 votes_for; // Total number of votes received for the proposal
+        uint256 votes_against; // Total number of votes received against the proposal
+        uint256 quorum; // Quorum needed for the proposal to be accepted
         bool exists; // Flag indicating whether the proposal exists
     }
 
@@ -50,14 +52,22 @@ contract ProposalVoting is Ownable {
     /**
      * @dev Submits a batch of proposals by their IDs.
      * @param proposalIds Array of proposal IDs to be submitted
+     * @param proposalTypes Array of proposal types to be submitted true = normal type, false = sanction type
+
      */
-    function submitProposalBatch(uint256[] memory proposalIds) external onlyOwner {
+    function submitProposalBatch(uint256[] memory proposalIds, bool[] proposalTypes) external onlyOwner {
+        require(proposalIds.length == proposalType.length, "The number of Id and of Types do not correspond");
         uint256 currentTime = block.timestamp;
         for (uint256 i = 0; i < proposalIds.length; i++) {
             require(!proposals[proposalIds[i]].exists, "Proposal already exists");
             proposals[proposalIds[i]].exists = true;
             totalProposals++;
             submissionTime[proposalIds[i]] = currentTime;
+            if (proposalType[i]) {
+                proposals[proposalIds[i]].quorum = 50;
+            } else {
+                proposals[proposalIds[i]].quorum = 70;
+            }
             emit ProposalSubmitted(proposalIds[i]);
         }
     }
@@ -66,17 +76,23 @@ contract ProposalVoting is Ownable {
      * @dev Allows a token owner to vote on a proposal.
      * @param proposalId ID of the proposal to vote on
      * @param votes Number of votes to cast
+     * @param against Votes casted against the prosal if true and for the proposal if false
      */
-    function vote(uint256 proposalId, uint256 votes) external {
+    function vote(uint256 proposalId, uint256 votes, bool against) external {
         require(tokenOwners[msg.sender], "Caller is not a token owner");
         require(proposals[proposalId].exists, "Proposal does not exist");
         require(votes > 0 && votes <= 100, "Invalid number of votes");
         require(block.timestamp >= submissionTime[proposalId] + votingDelay, "Voting has not started yet");
-
+        require(votesByVoter[msg.sender][proposalId] > 0, "You have already voted for this proposal");
         uint256 cost = votes.mul(votes); // Square the votes to calculate cost
         require(cost <= tokenBalanceOf(msg.sender), "Insufficient tokens");
-
-        proposals[proposalId].votes = proposals[proposalId].votes.add(votes);
+        // Adds the votes to the correct category
+        if (against) {
+            proposals[proposalId].votes_against = proposals[proposalId].votes_against.add(votes);
+        } else {
+            proposals[proposalId].votes_for = proposals[proposalId].votes_for.add(votes);
+        }
+        // 
         votesByVoter[msg.sender][proposalId] = votesByVoter[msg.sender][proposalId].add(votes);
 
         // Deduct tokens from voter
@@ -90,10 +106,14 @@ contract ProposalVoting is Ownable {
      */
     function endVoting() external onlyOwner {
         for (uint256 i = 0; i < totalProposals; i++) {
-            uint256 votesFor = proposals[i].votes;
-            uint256 votesAgainst = 100*(votesByVoter[msg.sender][i]) - votesFor; // Using standard multiplication
-            bool passed = votesFor > votesAgainst && votesFor.mul(2) > 100; // Using standard multiplication
-            emit VotingResult(i, votesFor, votesAgainst, passed);
+            if ((proposals[i].votes_for + proposals[i].votes_against) > 0){
+                bool passed = (100 * proposals[i].votes_for / (proposals[i].votes_for + proposals[i].votes_against))\
+                >= proposals[i].quorum; // calculate the result for the quorum
+            } else {
+                passed = false; // In the case no one voted for a proposal it is rejected by default
+            }
+
+            emit VotingResult(i, proposals[i].votes_for, proposals[i].votes_against, passed);
         }
         // Calculate remaining tokens for each voter
         for (uint256 i = 0; i < tokenOwnerList.length; i++) {
