@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "node_modules/@openzeppelin/contracts/utils/math/Math.sol";
 import "node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title ProposalVoting
@@ -13,11 +14,17 @@ contract ProposalVoting is Ownable {
     using Math for uint256;
 
     struct Proposal {
-        uint256 votes_for; // Total number of votes received for the proposal
-        uint256 votes_against; // Total number of votes received against the proposal
-        uint256 quorum; // Quorum needed for the proposal to be accepted
-        bool exists; // Flag indicating whether the proposal exists
+        uint256 votes_for; /// @dev Total number of votes received for the proposal
+        uint256 votes_against; /// @dev Total number of votes received against the proposal
+        uint256 quorum; /// @dev Quorum needed for the proposal to be accepted
+        bool exists; /// @dev Flag indicating whether the proposal exists
+        string title; /// @dev Title of the proposal
+        string Summary; /// @dev Short description of the proposal
+        uint256 parentProposalId; /// @dev 0 for inital proposals
     }
+
+    /// @dev Define the "COUNTRY" role
+    bytes32 public constant COUNTRY_ROLE = keccak256("COUNTRY");
 
     mapping(uint256 => Proposal) public proposals; // Mapping of proposal IDs to Proposal struct
     uint256 public totalProposals; // Total number of proposals submitted
@@ -37,11 +44,12 @@ contract ProposalVoting is Ownable {
     event TokensClaimed(address indexed owner, address indexed voter, uint256 amount);
 
     /**
-     * @dev Initializes the contract with the initial token owners and the ERC20 token contract address.
+     * @dev Initializes the contract with the initial token owners, admin role and the ERC20 token contract address.
      * @param _tokenOwners List of addresses initially owning voting tokens
      * @param _tokenAddress Address of the ERC20 token contract
      */
     constructor(address[] memory _tokenOwners, address _tokenAddress) Ownable(msg.sender) {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender); 
         for (uint256 i = 0; i < _tokenOwners.length; i++) {
             tokenOwners[_tokenOwners[i]] = true;
             tokenOwnerList.push(_tokenOwners[i]); // Add token owner to the list
@@ -50,26 +58,53 @@ contract ProposalVoting is Ownable {
     }
 
     /**
-     * @dev Submits a batch of proposals by their IDs.
+     * @dev Submits a batch of proposals by IDs and some info.
      * @param proposalIds Array of proposal IDs to be submitted
      * @param proposalTypes Array of proposal types to be submitted true = normal type, false = sanction type
-
+     * @param titles Array of titles for the proposals
+     * @param summaries Array of summaries for the proposals
      */
-    function submitProposalBatch(uint256[] memory proposalIds, bool[] proposalTypes) external onlyOwner {
+    function submitProposalBatch(
+        uint256[] memory proposalIds,
+        bool[] proposalTypes,
+        string[] memory titles,
+        string[] memory summaries) external onlyOwner {
         require(proposalIds.length == proposalType.length, "The number of Id and of Types do not correspond");
+        require(proposalIds.length == titles.length, "Mismatch between IDs and titles count");
+        require(proposalIds.length == summaries.length, "Mismatch between IDs and summaries count");
+
         uint256 currentTime = block.timestamp;
         for (uint256 i = 0; i < proposalIds.length; i++) {
             require(!proposals[proposalIds[i]].exists, "Proposal already exists");
             proposals[proposalIds[i]].exists = true;
             totalProposals++;
             submissionTime[proposalIds[i]] = currentTime;
-            if (proposalType[i]) {
+            if (proposalTypes[i]) {
                 proposals[proposalIds[i]].quorum = 50;
             } else {
                 proposals[proposalIds[i]].quorum = 70;
             }
+            proposals[proposalIds[i]].title = titles[i];
+            proposals[proposalIds[i]].summary = summaries[i];
+            proposals[proposalIds[i]].parentProposalId = 0; /// @dev Initial proposals have no parent !
             emit ProposalSubmitted(proposalIds[i]);
         }
+    }
+
+    function submitFollowUpProposal(uint256 parentProposalId, string memory title, string memory summary) external {
+        require(hasRole(COUNTRY_ROLE, msg.sender), "Caller does not have COUNTRY role");
+        require(proposals[parentProposalId].exists, "Parent proposal does not exist");
+        
+        uint256 proposalId = totalProposals++; /// @dev Use totalProposals as the new proposal ID
+        Proposal storage proposal = proposals[proposalId];
+        proposal.exists = true;
+        proposal.quorum = 50; /// @dev Follow-up proposals have a fixed quorum of 50 as they're "normal" proposals
+        proposal.title = title;
+        proposal.summary = summary;
+        proposal.parentProposalId = parentProposalId;
+        
+        submissionTime[proposalId] = block.timestamp;
+        emit ProposalSubmitted(proposalId);
     }
 
     /**
@@ -79,7 +114,7 @@ contract ProposalVoting is Ownable {
      * @param against Votes casted against the prosal if true and for the proposal if false
      */
     function vote(uint256 proposalId, uint256 votes, bool against) external {
-        require(tokenOwners[msg.sender], "Caller is not a token owner");
+        require(tokenOwners[msg.sender] || hasRole(COUNTRY_ROLE, msg.sender), "Caller is not authorized to vote");
         require(proposals[proposalId].exists, "Proposal does not exist");
         require(votes > 0 && votes <= 100, "Invalid number of votes");
         require(block.timestamp >= submissionTime[proposalId] + votingDelay, "Voting has not started yet");
