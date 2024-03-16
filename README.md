@@ -9,3 +9,4 @@ This is a Solidity smart contract for the creation and management of a token cal
 - Extends Ownable contract from OpenZeppelin for access control.
 - Allows delegation of voting power associated with tokens.
 - Includes events for delegation and voting.
+- Voters get some rewards base on their voting power in the DAO
