@@ -15,6 +15,7 @@ contract ProposalVoting is Ownable {
     struct Proposal {
         uint256 votes_for; // Total number of votes received for the proposal
         uint256 votes_against; // Total number of votes received against the proposal
+        address banned_address; // Address banned for this vote
         uint256 quorum; // Quorum needed for the proposal to be accepted
         bool exists; // Flag indicating whether the proposal exists
     }
@@ -52,11 +53,13 @@ contract ProposalVoting is Ownable {
     /**
      * @dev Submits a batch of proposals by their IDs.
      * @param proposalIds Array of proposal IDs to be submitted
-     * @param proposalTypes Array of proposal types to be submitted true = normal type, false = sanction type
-
+     * @param proposalTypes Array of proposal types to be submitted true = sanction type, false = normal type
+     * @param bannedCountries Array of the country aimed by each sanction type proposal, empty when a normal type 
      */
-    function submitProposalBatch(uint256[] memory proposalIds, bool[] proposalTypes) external onlyOwner {
+    function submitProposalBatch(uint256[] memory proposalIds, bool[] proposalTypes, address[] bannedCountries) external onlyOwner {
         require(proposalIds.length == proposalType.length, "The number of Id and of Types do not correspond");
+        require(proposalIds.length == bannedCountries.length, \
+            "The size of the bannedCountries is inconsistant with the number of proposals");
         uint256 currentTime = block.timestamp;
         for (uint256 i = 0; i < proposalIds.length; i++) {
             require(!proposals[proposalIds[i]].exists, "Proposal already exists");
@@ -64,9 +67,11 @@ contract ProposalVoting is Ownable {
             totalProposals++;
             submissionTime[proposalIds[i]] = currentTime;
             if (proposalType[i]) {
-                proposals[proposalIds[i]].quorum = 50;
-            } else {
                 proposals[proposalIds[i]].quorum = 70;
+                require(tokenOwners[bannedCountries[i]], "Unknown Country address");
+                proposals[proposalIds[i]].banned_address = bannedCountries[i];
+            } else {
+                proposals[proposalIds[i]].quorum = 50;
             }
             emit ProposalSubmitted(proposalIds[i]);
         }
@@ -81,6 +86,7 @@ contract ProposalVoting is Ownable {
     function vote(uint256 proposalId, uint256 votes, bool against) external {
         require(tokenOwners[msg.sender], "Caller is not a token owner");
         require(proposals[proposalId].exists, "Proposal does not exist");
+        require(msg.sender == proposals[proposalId].banned_address, "You are banned from the proposal's vote");
         require(votes > 0 && votes <= 100, "Invalid number of votes");
         require(block.timestamp >= submissionTime[proposalId] + votingDelay, "Voting has not started yet");
         require(votesByVoter[msg.sender][proposalId] > 0, "You have already voted for this proposal");
