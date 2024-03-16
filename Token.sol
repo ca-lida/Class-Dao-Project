@@ -64,9 +64,9 @@ contract MyToken is ERC777, Ownable {
         emit Delegate(msg.sender, address(0));
     }
 
-    /// @dev Function to mint token rewards for voters based on their voting power
+    /// @dev Function to mint rewards for voters based on their voting power
     /// @param voter The address of the voter
-    function mintTokenRewards(address voter) external onlyOwner {
+    function mintRewards(address voter) external onlyOwner {
         require(voter != address(0), "Invalid voter address");
 
         uint256 voterPower = votingPower[voter];
