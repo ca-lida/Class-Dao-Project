@@ -1,121 +1,137 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
-// Import necessary OpenZeppelin contracts
-import "@openzeppelin/contracts/governance/Governor.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorStorage.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "node_modules/@openzeppelin/contracts/access/Ownable.sol";
+import "node_modules/@openzeppelin/contracts/utils/math/Math.sol";
+import "node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract MyGovernor is Governor, GovernorCountingSimple, GovernorStorage, GovernorVotes, GovernorVotesQuorumFraction, AccessControl {
-    enum Category { Default, Special }
-    enum ProposalType { Initial, Following }
-    // Simplified tracking for the latest category 
-    Category private _lastProposalCategory = Category.Default;
+/**
+ * @title ProposalVoting
+ * @dev Contract for submitting and voting on proposals using a token-based voting system.
+ */
+contract ProposalVoting is Ownable {
+    using Math for uint256;
 
-    // Roles
-    bytes32 public constant COMITEE_ROLE = keccak256("COMITEE_ROLE");
-    bytes32 public constant COUNTRY_ROLE = keccak256("COUNTRY_ROLE");
-
-    constructor(IVotes _token)
-        Governor("MyGovernor")
-        GovernorVotes(_token)
-        GovernorVotesQuorumFraction(4)
-    {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender); 
-        _setupRole(COMITEE_ROLE, msg.sender); 
+    struct Proposal {
+        uint256 votes; // Total number of votes received for the proposal
+        bool exists; // Flag indicating whether the proposal exists
     }
 
-    // Dynamic voting delay based on category of proposal
-    function votingDelay() public view override returns (uint256) {
-        if (_lastProposalCategory == Category.Special) {
-            return 7200; // e.g., Special category delay
-        } else {
-            return 3600; // e.g., Default category delay
+    mapping(uint256 => Proposal) public proposals; // Mapping of proposal IDs to Proposal struct
+    uint256 public totalProposals; // Total number of proposals submitted
+
+    mapping(address => bool) public tokenOwners; // Mapping of addresses owning voting tokens
+    address[] public tokenOwnerList; // List of addresses owning voting tokens
+    mapping(address => mapping(uint256 => uint256)) public votesByVoter; // Mapping of votes by each voter for each proposal
+    mapping(address => uint256) public remainingTokens; // Remaining tokens each voter owns
+    mapping(uint256 => uint256) public submissionTime; // Time of submission for each proposal
+    IERC20 public token; // The ERC20 token contract
+
+    uint256 public constant votingDelay = 24 hours; // Delay before voting starts after proposal submission
+
+    event ProposalSubmitted(uint256 indexed proposalId);
+    event Voted(address indexed voter, uint256 indexed proposalId, uint256 votes);
+    event VotingResult(uint256 indexed proposalId, uint256 votesFor, uint256 votesAgainst, bool passed);
+    event TokensClaimed(address indexed owner, address indexed voter, uint256 amount);
+
+    /**
+     * @dev Initializes the contract with the initial token owners and the ERC20 token contract address.
+     * @param _tokenOwners List of addresses initially owning voting tokens
+     * @param _tokenAddress Address of the ERC20 token contract
+     */
+    constructor(address[] memory _tokenOwners, address _tokenAddress) Ownable(msg.sender) {
+        for (uint256 i = 0; i < _tokenOwners.length; i++) {
+            tokenOwners[_tokenOwners[i]] = true;
+            tokenOwnerList.push(_tokenOwners[i]); // Add token owner to the list
+        }
+        token = IERC20(_tokenAddress);
+    }
+
+    /**
+     * @dev Submits a batch of proposals by their IDs.
+     * @param proposalIds Array of proposal IDs to be submitted
+     */
+    function submitProposalBatch(uint256[] memory proposalIds) external onlyOwner {
+        uint256 currentTime = block.timestamp;
+        for (uint256 i = 0; i < proposalIds.length; i++) {
+            require(!proposals[proposalIds[i]].exists, "Proposal already exists");
+            proposals[proposalIds[i]].exists = true;
+            totalProposals++;
+            submissionTime[proposalIds[i]] = currentTime;
+            emit ProposalSubmitted(proposalIds[i]);
         }
     }
 
-    // Dynamic voting period based on category of proposal
-    function votingPeriod() public view override returns (uint256) {
-        if (_lastProposalCategory == Category.Special) {
-            return 50400; // e.g., Special category period
-        } else {
-            return 25200; // e.g., Default category period
+    /**
+     * @dev Allows a token owner to vote on a proposal.
+     * @param proposalId ID of the proposal to vote on
+     * @param votes Number of votes to cast
+     */
+    function vote(uint256 proposalId, uint256 votes) external {
+        require(tokenOwners[msg.sender], "Caller is not a token owner");
+        require(proposals[proposalId].exists, "Proposal does not exist");
+        require(votes > 0 && votes <= 100, "Invalid number of votes");
+        require(block.timestamp >= submissionTime[proposalId] + votingDelay, "Voting has not started yet");
+
+        uint256 cost = votes.mul(votes); // Square the votes to calculate cost
+        require(cost <= tokenBalanceOf(msg.sender), "Insufficient tokens");
+
+        proposals[proposalId].votes = proposals[proposalId].votes.add(votes);
+        votesByVoter[msg.sender][proposalId] = votesByVoter[msg.sender][proposalId].add(votes);
+
+        // Deduct tokens from voter
+        deductTokens(msg.sender, cost);
+
+        emit Voted(msg.sender, proposalId, votes);
+    }
+
+    /**
+     * @dev Ends voting for all proposals and calculates the results.
+     */
+    function endVoting() external onlyOwner {
+        for (uint256 i = 0; i < totalProposals; i++) {
+            uint256 votesFor = proposals[i].votes;
+            uint256 votesAgainst = 100*(votesByVoter[msg.sender][i]) - votesFor; // Using standard multiplication
+            bool passed = votesFor > votesAgainst && votesFor.mul(2) > 100; // Using standard multiplication
+            emit VotingResult(i, votesFor, votesAgainst, passed);
+        }
+        // Calculate remaining tokens for each voter
+        for (uint256 i = 0; i < tokenOwnerList.length; i++) {
+            address voter = tokenOwnerList[i];
+            uint256 remaining = tokenBalanceOf(voter);
+            remainingTokens[voter] = remaining;
         }
     }
 
-    // Proposal, but with category field and storage of it (to check carefully)
-    // Added the type of proposal : comitee can only propose initial proposals, and countries follow-up proposals
-    // Comitee is the only one who can propose to category "Special" (Sanctions)
-    function proposeWithCategoryAndType(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        string memory description,
-        Category category,
-        ProposalType proposalType
-    ) public returns (uint256) {
-        // Check roles and proposal type
-        if (proposalType == ProposalType.Initial) {
-            require(hasRole(COMITEE_ROLE, msg.sender), "Caller does not have COMITEE role");
-        } else if (proposalType == ProposalType.Following) {
-            require(hasRole(COUNTRY_ROLE, msg.sender), "Caller does not have COUNTRY role");
-            require(category == Category.Default, "Following proposals must be Default category");
-        }
-
-        _lastProposalCategory = category;
-
-        return super.propose(targets, values, calldatas, description);
-    }
-
-    // Function to grant COMITEE role
-    function grantComiteeRole(address account) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Caller is not an admin");
-        grantRole(COMITEE_ROLE, account);
-    }
-
-    // Function to revoke COMITEE role
-    function revokeComiteeRole(address account) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Caller is not an admin");
-        revokeRole(COMITEE_ROLE, account);
-    }
-
-    // Override the _vote function to consider quadratic voting power
-    function _vote(uint256 proposalId, address voter, bool support) internal override {
-        uint256 votingPower = calculateVotingPower(voter);
-        _voteInternal(proposalId, voter, support, votingPower);
-        emit VoteEmitted(proposalId, voter, support, votingPower);
-    }
-
-    // Declare the _voteInternal function
-    function _voteInternal(uint256 proposalId, address voter, bool support, uint256 votingPower) internal {
-        // Call the appropriate vote function based on your governance module
-        super._vote(proposalId, voter, support, votingPower);
-    }
-    
-    // The following functions are overrides required by Solidity.
-
-    // Dynamic quorum based on category of proposal
-    function quorum(uint256 blockNumber)
-        public
-        view
-        override(Governor, GovernorVotesQuorumFraction)
-        returns (uint256)
-    {
-        if (_lastProposalCategory == Category.Special) {
-            return super.quorum(blockNumber) * 2; // e.g., Double the quorum for Special category
-        } else {
-            return super.quorum(blockNumber); // Default quorum
+    /**
+     * @dev Allows the owner to claim remaining tokens of each voter.
+     */
+    function claimRemainingTokens() external onlyOwner {
+        for (uint256 i = 0; i < tokenOwnerList.length; i++) {
+            address voter = tokenOwnerList[i];
+            uint256 remaining = remainingTokens[voter];
+            require(remaining > 0, "No remaining tokens to claim");
+            remainingTokens[voter] = 0;
+            token.transfer(owner(), remaining);
+            emit TokensClaimed(owner(), voter, remaining);
         }
     }
 
-    function _propose(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description, address proposer)
-        internal
-        override(Governor, GovernorStorage)
-        returns (uint256)
-    {
-        return super._propose(targets, values, calldatas, description, proposer);
+    /**
+     * @dev Retrieves the token balance of an account.
+     * @param account Address of the account
+     * @return The token balance of the account
+     */
+    function tokenBalanceOf(address account) internal view returns (uint256) {
+        return token.balanceOf(account);
+    }
+
+    /**
+     * @dev Deducts tokens from an account.
+     * @param account Address of the account
+     * @param amount Amount of tokens to deduct
+     */
+    function deductTokens(address account, uint256 amount) internal {
+        token.transferFrom(account, address(this), amount);
     }
 }
