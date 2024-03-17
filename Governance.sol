@@ -4,13 +4,13 @@ pragma solidity ^0.8.0;
 import "node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "node_modules/@openzeppelin/contracts/utils/math/Math.sol";
 import "node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "node_modules/@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title ProposalVoting
  * @dev Contract for submitting and voting on proposals using a token-based voting system.
  */
-contract ProposalVoting is Ownable {
+contract ProposalVoting is Ownable, AccessControl {
     using Math for uint256;
 
     struct Proposal {
@@ -43,6 +43,7 @@ contract ProposalVoting is Ownable {
     event Voted(address indexed voter, uint256 indexed proposalId, uint256 votes);
     event VotingResult(uint256 indexed proposalId, uint256 votesFor, uint256 votesAgainst, bool passed);
     event TokensClaimed(address indexed owner, address indexed voter, uint256 amount);
+    event RewardMinted(address indexed voter, uint256 rewardAmount);
 
     /**
      * @dev Initializes the contract with the initial token owners, admin role and the ERC20 token contract address.
@@ -68,34 +69,43 @@ contract ProposalVoting is Ownable {
      */
     function submitProposalBatch(
         uint256[] memory proposalIds, 
-        bool[] proposalTypes, 
-        address[] bannedCountries,
+        bool[] memory proposalTypes, 
+        address[] memory bannedCountries,
         string[] memory titles,
         string[] memory summaries) external onlyOwner {
-        require(proposalIds.length == proposalType.length, "The number of Id and of Types do not correspond");
-        require(proposalIds.length == bannedCountries.length, "The size of the bannedCountries is inconsistant with the number of proposals");
+        require(proposalIds.length == proposalTypes.length, "The number of Ids and Types do not correspond");
         require(proposalIds.length == titles.length, "Mismatch between IDs and titles count");
         require(proposalIds.length == summaries.length, "Mismatch between IDs and summaries count");
+
+        uint256 bannedCountryIndex = 0;
 
         uint256 currentTime = block.timestamp;
         for (uint256 i = 0; i < proposalIds.length; i++) {
             require(!proposals[proposalIds[i]].exists, "Proposal already exists");
-            proposals[proposalIds[i]].exists = true;
-            totalProposals++;
-            submissionTime[proposalIds[i]] = currentTime;
+
+            proposals[proposalIds[i]] = Proposal({
+                votes_for: 0,
+                votes_against: 0,
+                banned_address: address(0), 
+                quorum: proposalTypes[i] ? 70 : 50, /// @notice Sanction type proposals have a higher quorum
+                exists: true,
+                title: titles[i],
+                Summary: summaries[i],
+                parentProposalId: 0 ///@dev Initial proposals have no parent
+            });
+
+            /// @dev Only assign a banned address for sanction type proposals
             if (proposalTypes[i]) {
-                proposals[proposalIds[i]].quorum = 70;
-                require(tokenOwners[bannedCountries[i]], "Unknown Country address");
-                proposals[proposalIds[i]].banned_address = bannedCountries[i];
-            } else {
-                proposals[proposalIds[i]].quorum = 50;
+                require(bannedCountryIndex < bannedCountries.length, "Insufficient bannedCountries provided");
+                address bannedCountry = bannedCountries[bannedCountryIndex++];
+                require(tokenOwners[bannedCountry], "Unknown Country address");
+                proposals[proposalIds[i]].banned_address = bannedCountry;
             }
-            proposals[proposalIds[i]].title = titles[i];
-            proposals[proposalIds[i]].summary = summaries[i];
-            proposals[proposalIds[i]].parentProposalId = 0; /// @dev Initial proposals have no parent !
+
+            submissionTime[proposalIds[i]] = currentTime;
+            totalProposals++;
             emit ProposalSubmitted(proposalIds[i]);
         }
-    }
 
     /**
      * @dev Allows COUNTRY to make proposals (child proposal) after initial proposal by expert comitee
@@ -112,7 +122,7 @@ contract ProposalVoting is Ownable {
         proposal.exists = true;
         proposal.quorum = 50; /// @dev Follow-up proposals have a fixed quorum of 50 as they're "normal" proposals
         proposal.title = title;
-        proposal.summary = summary;
+        proposal.Summary = summary;
         proposal.parentProposalId = parentProposalId;
         
         submissionTime[proposalId] = block.timestamp;
@@ -136,12 +146,12 @@ contract ProposalVoting is Ownable {
         require(cost <= tokenBalanceOf(msg.sender), "Insufficient tokens");
         // Adds the votes to the correct category
         if (against) {
-            proposals[proposalId].votes_against = proposals[proposalId].votes_against.add(votes);
+            proposals[proposalId].votes_against += votes;
         } else {
-            proposals[proposalId].votes_for = proposals[proposalId].votes_for.add(votes);
+            proposals[proposalId].votes_for += votes;
         }
         // 
-        votesByVoter[msg.sender][proposalId] = votesByVoter[msg.sender][proposalId].add(votes);
+        votesByVoter[msg.sender][proposalId] += votes;
 
         // Deduct tokens from voter
         deductTokens(msg.sender, cost);
@@ -154,9 +164,9 @@ contract ProposalVoting is Ownable {
      */
     function endVoting() external onlyOwner {
         for (uint256 i = 0; i < totalProposals; i++) {
+            bool passed = false;
             if ((proposals[i].votes_for + proposals[i].votes_against) > 0){
-                bool passed = (100 * proposals[i].votes_for / (proposals[i].votes_for + proposals[i].votes_against))\
-                >= proposals[i].quorum; // calculate the result for the quorum
+                bool passed = (100 * proposals[i].votes_for / (proposals[i].votes_for + proposals[i].votes_against)) >= proposals[i].quorum; // calculate the result for the quorum
             } else {
                 passed = false; // In the case no one voted for a proposal it is rejected by default
             }
@@ -168,6 +178,19 @@ contract ProposalVoting is Ownable {
             address voter = tokenOwnerList[i];
             uint256 remaining = tokenBalanceOf(voter);
             remainingTokens[voter] = remaining;
+        }
+
+        // Mint rewards for all voters with the COUNTRY role
+        for (uint256 i = 0; i < tokenOwnerList.length; i++) {
+            address voter = tokenOwnerList[i];
+            if (hasRole(COUNTRY_ROLE, voter)) {
+                
+                uint256 voterPower = votingPower[voter];
+                uint256 rewardAmount = voterPower * 10; // Example calculation for reward amount
+                token.mintRewards(voter, rewardAmount); 
+
+                emit RewardMinted(voter, rewardAmount);
+            }
         }
     }
 
