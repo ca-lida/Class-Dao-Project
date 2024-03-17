@@ -5,6 +5,7 @@ import "node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "node_modules/@openzeppelin/contracts/utils/math/Math.sol";
 import "node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "node_modules/@openzeppelin/contracts/access/AccessControl.sol";
+import "Token.sol";
 
 /**
  * @title ProposalVoting
@@ -12,6 +13,8 @@ import "node_modules/@openzeppelin/contracts/access/AccessControl.sol";
  */
 contract ProposalVoting is Ownable, AccessControl {
     using Math for uint256;
+
+    Token public myTokenContract;
 
     struct Proposal {
         uint256 votes_for; // Total number of votes received for the proposal
@@ -57,6 +60,21 @@ contract ProposalVoting is Ownable, AccessControl {
             tokenOwnerList.push(_tokenOwners[i]); // Add token owner to the list
         }
         token = IERC20(_tokenAddress);
+    }
+
+    /// @dev function initializing token contract reference
+    function setMyTokenContract(address _myTokenAddress) external onlyOwner {
+        myTokenContract = MyToken(_myTokenAddress);
+    }
+
+    /// @dev access votingPower mapping from token contract
+    function getVotingPower(address voter) public view returns (uint256) {
+        return myTokenContract.votingPower(voter);
+    }
+
+    /// @dev access mintRewards function from token contract
+    function rewardVoter(address voter, uint256 rewardAmount) internal {
+        myTokenContract.mintRewards(voter, rewardAmount);
     }
 
     /**
@@ -144,6 +162,10 @@ contract ProposalVoting is Ownable, AccessControl {
         require(votesByVoter[msg.sender][proposalId] > 0, "You have already voted for this proposal");
         uint256 cost = votes.mul(votes); // Square the votes to calculate cost
         require(cost <= tokenBalanceOf(msg.sender), "Insufficient tokens");
+
+        uint256 voterPower = getVotingPower(msg.sender);
+        require(voterPower >= votes, "Insufficient voting power");
+
         // Adds the votes to the correct category
         if (against) {
             proposals[proposalId].votes_against += votes;
@@ -165,31 +187,23 @@ contract ProposalVoting is Ownable, AccessControl {
     function endVoting() external onlyOwner {
         for (uint256 i = 0; i < totalProposals; i++) {
             bool passed = false;
-            if ((proposals[i].votes_for + proposals[i].votes_against) > 0){
-                bool passed = (100 * proposals[i].votes_for / (proposals[i].votes_for + proposals[i].votes_against)) >= proposals[i].quorum; // calculate the result for the quorum
-            } else {
-                passed = false; // In the case no one voted for a proposal it is rejected by default
+            if ((proposals[i].votes_for + proposals[i].votes_against) > 0) {
+                passed = (100 * proposals[i].votes_for / (proposals[i].votes_for + proposals[i].votes_against)) >= proposals[i].quorum;
             }
-
+    
             emit VotingResult(i, proposals[i].votes_for, proposals[i].votes_against, passed);
         }
-        // Calculate remaining tokens for each voter
-        for (uint256 i = 0; i < tokenOwnerList.length; i++) {
-            address voter = tokenOwnerList[i];
-            uint256 remaining = tokenBalanceOf(voter);
-            remainingTokens[voter] = remaining;
-        }
-
-        // Mint rewards for all voters with the COUNTRY role
+    
+        // Corrected section to access votingPower and call mintRewards correctly, need to check
         for (uint256 i = 0; i < tokenOwnerList.length; i++) {
             address voter = tokenOwnerList[i];
             if (hasRole(COUNTRY_ROLE, voter)) {
-                
-                uint256 voterPower = votingPower[voter];
-                uint256 rewardAmount = voterPower * 10; // Example calculation for reward amount
-                token.mintRewards(voter, rewardAmount); 
-
-                emit RewardMinted(voter, rewardAmount);
+                uint256 voterPower = getVotingPower(voter); // Use getVotingPower to access voting power
+                if (voterPower > 0) {
+                    // Corrected to use myTokenContract.mintRewards directly
+                    myTokenContract.mintRewards(voter, voterPower * 10); // Example reward calculation
+                    emit RewardMinted(voter, voterPower * 10);
+                }
             }
         }
     }
