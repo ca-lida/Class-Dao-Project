@@ -18,7 +18,9 @@ By leveraging a decentralized platform, ClimateDAO seeks to enhance the United N
 ### 1.Contracts and Functions
 Token Contract (ERC-777): This contract governs the issuance, transfer, and management of tokens. It uses advanced features of ERC-777, like operators and hooks, for enhanced functionality and security.
 Voting Contract: This contract manages all voting mechanisms, encompassing proposal creation, voting, and vote counting. It verifies token ownership through the token contract to prevent double voting.
-Delegation Contract: This contract oversees the delegation of voting rights among token holders.It enables participants to delegate their voting rights to representatives.
+MyToken contract: This is a smart contract based on the ERC777 standard that is used to create and manage tokens called MyToken and supports the delegation of token voting rights. The contract provides voting rights delegation functions, and provides rewards for users who actively participate in voting.
+Delegation function: In the MyToken contract, this function allows token holders to delegate their voting rights to others.It makes the voting process more flexible and secure. 
+
 
 ### 2.Core Components
 Technical Committee: This is a committee with expertise in climate change. It is responsible for drafting proposals to achieve long-term sustainability goals for the planet.
