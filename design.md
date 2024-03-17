@@ -74,6 +74,18 @@ We decided to use a system like the COP meetings and the ERC-20 blockchain techn
 ### 2.Technical Difficulties
 Using ERC-20 technology for our voting and delegation system is tough. We had to be very careful to count votes correctly and keep the voting process secure. Also, setting up rules like secondary voting and time locks (where you have to wait before you can vote) requires a lot of careful work. We need to be sure that tokens are used the right way and that we correctly figure out how much voting costs. Plus, making sure the proposals from our technical experts fit well with the voting rules needs a lot of attention. All these issues show that it's not easy to make a system that is safe, flexible, and can handle complicated voting methods.
 
+During our teamwork, we found the following more precise difficulties:
+
+ERC choice: Our token team initially chose ERC-777 for its advanced features and flexibility. However, we later discovered that ERC-777 was deprecated, a critical issue that only came to light when we attempted to compile the code on Sunday. This revelation forced us to change the token to ERC-20 at the last minute.
+
+Deployed Contract: The deployment of the governance contract was contingent upon the token contract. Due to the last-minute change in token standard and the discovery of ERC-777's deprecation, we were unable to deploy the token contract. Consequently, the governance contract could also not be deployed.
+
+Tests Run: In the absence of a deployed token contract, only basic dummy tests were designed, and no comprehensive fuzz or integration testing could be conducted. This limitation significantly impacted our ability to thoroughly test the system's resilience and functionality.
+
+Audit Run: A static audit using Slither was performed on both Solidity files, but it was not conducted on the latest token team file, as it was deemed fairly similar to the previous version. Unfortunately, a dynamic audit was not possible due to the lack of deployment. It leaves a gap in our security and functionality verification process.
+
+
+
 ### 3.Difficulty in interpersonal communication
 Working together between the technical committee, token holders, and the governance team is really hard. We need to make sure everyone agrees on what technology to use and how to make decisions. It is also important to figure out how to change and judge proposals properly. Good talking and planning skills are very important to solve these problems.Talking often and giving feedback helps make sure the ideas are good and can change if needed. This helps everyone work together towards the same goals.
 
