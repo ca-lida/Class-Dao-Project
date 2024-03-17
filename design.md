@@ -41,9 +41,13 @@ The project leverages the flexibility, advanced features, and improved security 
 
 
 ## IV.Selected governance process model
-The governance process is inspired by Model United Nations and implemented through a DAO structure. The model allows for a democratic and decentralized decision-making process. In this case, token holders can propose, vote and fund climate change-related initiatives.The DAO ensures that all operations are transparent, secure and in the interest of the community.
+Taking inspiration from the Model United Nations, ClimateDAO operates through a DAO structure to enable a democratic and decentralized decision-making process.This allows token holders to propose, vote on, and fund initiatives related to climate change. It can ensure operations are transparent, secure, and aligned with community interests. 
 
+Our system uses a special voting method called quadratic voting. It lets people give more votes to the projects they think are most important. It makes the way of making decisions more detailed and thoughtful.
 
+Like the COP meetings, ClimateDAO has a technical committee who knows a lot about climate change. It put forward ideas to help our planet in the long run. Each country in the DAO gets to vote on these ideas, and every country has 100 tokens to use on the proposals they like the most. After everyone votes, the chairman tells everyone the outcomes and gathers any tokens left in each country's account.
+
+An essential feature of our DAO is the ability for countries to propose amendments to draft proposals. It can foster a more interactive and responsive governance environment. Also, we have a rule where there is a 24-hour wait time after the chairman shares proposals before voting starts. It can make sure everyone thinks carefully about them. Our voting system makes it so that the more votes you want to give, the more it costs - like one vote costs one token, but two votes cost four tokens. This encourages people to vote wisely. To get a proposal passed, more than half of the votes (over 50%) need to agree. It helps make sure important projects get enough support.
 
 ## V.Reflection
 
