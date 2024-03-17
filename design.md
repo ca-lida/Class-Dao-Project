@@ -32,7 +32,8 @@ Token Voting: It Integrates with the voting contract. It enables token holders t
 Voting Delegation: Through the delegation contract, token holders can delegate their voting rights to another party. This is managed carefully to maintain transparency and prevent abuse.
 Quadratic Voting: It implements a cost for voting that increases non-linearly with the number of votes. For example, 1 vote costs 1 token, 2 votes cost 4 tokens, 3 votes cost 9 tokens, etc.
 Time Lock: It introduces a 24-hour locking period required before new proposals can be submitted for voting.
-Technical Committee Proposals: They are proposals drafted by the Technical Committee.They typically require a simple majority to pass. Proposals involving economic sanctions require a two-thirds majority for approval.
+Technical Committee Proposals: In ClimateDAO, proposals on climate change are drafted by the Technical Committee. These proposals usually need a simple majority to pass. Proposals that involve economic sanctions require a two-thirds majority for approval. Moreover, if a quorum for the technical committee's proposal is not met, countries can create their own versions of the proposal with minor changes.
+
 
 
 ## III.Selected Token Criteria
