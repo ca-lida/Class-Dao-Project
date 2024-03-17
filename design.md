@@ -1,4 +1,4 @@
-# Design.md
+# design.md
 
 
 ## I.Introduction
