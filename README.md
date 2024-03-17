@@ -1,15 +1,14 @@
 # Class DAO Project - Dauphine 24 Digital Economics
-
-### 1. Project Description
-
-The Digital Economics DAO projects consists in deploying our own ERC standard onto the testnet.
+The DE ClimateDAO projects consists in deploying our own ERC standard onto the testnet.
 
 This work is realised in a one week period and is executed under the Software Development Life Cycle framework. 
 
-All students work in the same repository and are divided into 3 groups, the DevOps, Gouvernance, Token teams.
+All students work in the same repository and are divided into 3 groups, the DevOps, Governance, Token teams - each with their own branch.
 
-Discussions about the topic, token, etc. are ongoing so further information will be uploaded soon...
 
+### 1. Project Description - ClimateDAO
+
+The DAO serves as a governance system for a Model UN focused on Climate Change. Using ERC 777 standard, it enables token transfer, voting, and delegation. The annual sessions assess climate progress without binding agreements. Participants allocate 100 tokens to vote on proposals. A 24-hour reflection period allows amendments. Approval requires a simple majority. Replicating UN COP, it employs Quadratic voting, which escalates token costs: 1 vote = 1 token, 2 votes = 4 tokens, 3 votes = 9 tokens, incentivizing focus on critical issues. ++ rewards
 
 ### 2. Installation and Execution
 
@@ -80,3 +79,4 @@ forge test --list --json --match-test "testFail*" | tail -n 1 | json_pp
 
 More information on the tests with Foundry are available [here](https://book.getfoundry.sh/reference/forge/forge-test)
 
+###3. Contract Address
