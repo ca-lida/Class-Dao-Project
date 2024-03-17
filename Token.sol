@@ -1,46 +1,76 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC777/ERC777.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-/// @title MyToken - Custom ERC777 Token Contract with Voting Power Delegation
-/// @dev This contract is based ERC777 token standard, including delegation of voting power
-contract MyToken is ERC777, Ownable {
+/// @title MyToken
+/// @dev A custom ERC20 token contract with voting power delegation and banning of addresses.
+contract MyToken is Ownable, ERC20 {
     uint256 public constant INITIAL_VOTING_POWER = 1;
-    // store the voting power of each addresses
     mapping(address => uint256) public votingPower;
+    mapping(address => bool) public bannedAddresses;
 
-    /// @dev Emitted when a delegate is assigned
-    /// @param from The address delegating the voting power
-    /// @param to The address receiving the delegated voting power
     event Delegate(address indexed from, address indexed to);
-
-    /// @dev Emitted when a vote is cast
-    /// @param voter The address casting the vote
-    /// @param amount The amount of voting power used for the vote
     event Vote(address indexed voter, uint256 amount);
-
-    /// @dev Emitted when a voter gets rewards from voting 
-    /// @param voter The address casting the vote/receiving the rewards
-    /// @param amount The amount of token rewarded
     event RewardMinted(address indexed voter, uint256 amount);
+    event AddressBanned(address indexed bannedAddress);
 
-    /// @dev Constructor to initialize the token.
+    /// @dev Constructs the MyToken contract.
     /// @param initialSupply The initial supply of tokens.
-    /// @param defaultOperators The default operators for the token.
     /// @param initialOwner The initial owner of the contract.
     constructor(
         uint256 initialSupply,
-        address[] memory defaultOperators,
-        address initialOwner // Add initialOwner parameter
-    ) ERC777("MyToken", "MTK", defaultOperators) Ownable(initialOwner) {
-        _mint(msg.sender, initialSupply, "", "");
+        address initialOwner
+    ) ERC20("MyToken", "MTK") Ownable(initialOwner) {
+        _mint(msg.sender, initialSupply);
         votingPower[msg.sender] = initialSupply;
     }
 
-    /// @dev Function to delegate voting power to another address (chosen by the token holder)
-    /// @param to The address to delegate the voting power to
+    /// @dev Overrides the transfer function to update voting power and check banned addresses.
+    /// @param sender The sender of the tokens.
+    /// @param recipient The recipient of the tokens.
+    /// @param amount The amount of tokens to transfer.
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        require(!bannedAddresses[msg.sender], "Sender is banned");
+        require(!bannedAddresses[recipient], "Recipient is banned");
+
+        uint256 senderPower = votingPower[msg.sender];
+        uint256 recipientPower = votingPower[recipient];
+
+        if (senderPower > 0) {
+            votingPower[msg.sender] -= amount;
+        }
+        if (recipientPower > 0) {
+            votingPower[recipient] += amount;
+        }
+
+        return super.transfer(recipient, amount);
+    }
+
+    /// @dev Overrides the transferFrom function to update voting power and check banned addresses.
+    /// @param sender The sender of the tokens.
+    /// @param recipient The recipient of the tokens.
+    /// @param amount The amount of tokens to transfer.
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
+        require(!bannedAddresses[sender], "Sender is banned");
+        require(!bannedAddresses[recipient], "Recipient is banned");
+
+        uint256 senderPower = votingPower[sender];
+        uint256 recipientPower = votingPower[recipient];
+
+        if (senderPower > 0) {
+            votingPower[sender] -= amount;
+        }
+        if (recipientPower > 0) {
+            votingPower[recipient] += amount;
+        }
+
+        return super.transferFrom(sender, recipient, amount);
+    }
+
+    /// @dev Delegates voting power to another address.
+    /// @param to The address to delegate the voting power to.
     function delegate(address to) external {
         require(to != address(0), "Invalid delegate address");
         require(to != msg.sender, "Cannot delegate to yourself");
@@ -54,30 +84,36 @@ contract MyToken is ERC777, Ownable {
         emit Delegate(msg.sender, to);
     }
 
-    /// @dev Function to revoke previously delegated voting power.
+    /// @dev Revokes previously delegated voting power.
     function revokeDelegate() external {
         uint256 senderPower = votingPower[msg.sender];
         require(senderPower > 0, "Sender has no voting power");
 
-        // The token voting power is reset to its inital value
         votingPower[msg.sender] = INITIAL_VOTING_POWER;
         emit Delegate(msg.sender, address(0));
     }
 
-    /// @dev Function to mint rewards for voters based on their voting power
-    /// @param voter The address of the voter
-    function mintRewards(address voter) external onlyOwner {
+    /// @dev Mints rewards for voters based on their voting power.
+    /// @param voter The address of the voter.
+    /// @param rewardAmount The amount of tokens to mint as rewards.
+    function mintRewards(address voter, uint256 rewardAmount) external onlyOwner {
         require(voter != address(0), "Invalid voter address");
+        require(!bannedAddresses[voter], "Voter is banned");
 
         uint256 voterPower = votingPower[voter];
-        require(voterPower > 0, "voter has no voting power");
+        require(voterPower > 0, "Voter has no voting power");
 
-        // Determine reward amount based on voting power
-        uint256 rewardAmount = voterPower * 10; // Arbitrarily set to 10
-
-        // Mint tokens as rewards
-        _mint(voter, rewardAmount, "", "");
-
+        _mint(voter, rewardAmount);
         emit RewardMinted(voter, rewardAmount);
+    }
+
+    /// @dev Bans an address from participating in voting.
+    /// @param _address The address to be banned.
+    function banAddress(address _address) external onlyOwner {
+        require(_address != address(0), "Invalid address");
+        require(_address != owner(), "Cannot ban owner");
+
+        bannedAddresses[_address] = true;
+        emit AddressBanned(_address);
     }
 }
