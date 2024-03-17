@@ -17,6 +17,11 @@ By leveraging a decentralized platform, ClimateDAO seeks to enhance the United N
 
 [diagram 1](https://github.com/ca-lida/Class-Dao-Project/blob/planning/diagram.png)
 
+If you would like to see more details, please check the following diagram:
+
+[diagram 2](https://github.com/ca-lida/Class-Dao-Project/blob/main/Audit/GovernanceInheritanceDiagram.png)
+
+
 ### 1.Contracts and Functions
 Token Contract (ERC-777): This contract governs the issuance, transfer, and management of tokens. It uses advanced features of ERC-777, like operators and hooks, for enhanced functionality and security.
 
