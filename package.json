@@ -1,0 +1,21 @@
+{
+  "name": "class-dao-project",
+  "version": "1.0.0",
+  "description": "The DE ClimateDAO projects consists in deploying our own ERC standard onto the testnet.",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ca-lida/Class-Dao-Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ca-lida/Class-Dao-Project/issues"
+  },
+  "homepage": "https://github.com/ca-lida/Class-Dao-Project#readme"
+}

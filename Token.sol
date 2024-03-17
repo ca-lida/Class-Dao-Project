@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC777/ERC777.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "node_modules/@openzeppelin/contracts/token/ERC777/ERC777.sol";
+import "node_modules/@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title MyToken - Custom ERC777 Token Contract with Voting Power Delegation
 /// @dev This contract is based ERC777 token standard, including delegation of voting power
