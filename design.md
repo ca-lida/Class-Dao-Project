@@ -19,21 +19,29 @@ By leveraging a decentralized platform, ClimateDAO seeks to enhance the United N
 
 ### 1.Contracts and Functions
 Token Contract (ERC-777): This contract governs the issuance, transfer, and management of tokens. It uses advanced features of ERC-777, like operators and hooks, for enhanced functionality and security.
+
 Voting Contract: This contract manages all voting mechanisms, encompassing proposal creation, voting, and vote counting. It verifies token ownership through the token contract to prevent double voting.
+
 MyToken contract: This is a smart contract based on the ERC777 standard that is used to create and manage tokens called MyToken and supports the delegation of token voting rights. The contract provides voting rights delegation functions, and provides rewards for users who actively participate in voting.
+
 Delegation function: In the MyToken contract, this function allows token holders to delegate their voting rights to others.It makes the voting process more flexible and secure. 
 
 
 ### 2.Core Components
 Technical Committee: This is a committee with expertise in climate change. It is responsible for drafting proposals to achieve long-term sustainability goals for the planet.
+
 Voting System: This is a modified voting mechanism implemented via the ERC-777 token standard. It introduces incentives to encourage high-quality proposals.
 
 ### 3.Functionality
 Token Transfer: It utilizes the standard transfer function of ERC-777. It can allow token holders to send and receive tokens safely and efficiently.
+
 Token Voting: It Integrates with the voting contract. It enables token holders to cast votes on proposals. It uses ERC-777 hooks to verify token ownership and ensures that each token can only vote once per proposal.
 Voting Delegation: Through the delegation contract, token holders can delegate their voting rights to another party. This is managed carefully to maintain transparency and prevent abuse.
+
 Quadratic Voting: It implements a cost for voting that increases non-linearly with the number of votes. For example, 1 vote costs 1 token, 2 votes cost 4 tokens, 3 votes cost 9 tokens, etc.
+
 Time Lock: It introduces a 24-hour locking period required before new proposals can be submitted for voting.
+
 Technical Committee Proposals: In ClimateDAO, proposals on climate change are drafted by the Technical Committee. These proposals usually need a simple majority to pass. Proposals that involve economic sanctions require a two-thirds majority for approval. Moreover, if a quorum for the technical committee's proposal is not met, countries can create their own versions of the proposal with minor changes.
 
 
