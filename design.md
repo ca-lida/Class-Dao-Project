@@ -15,7 +15,7 @@ By leveraging a decentralized platform, ClimateDAO seeks to enhance the United N
 
 ## II.Technical specifications and interactive diagrams
 
-[diagram 1](https://github.com/ca-lida/Class-Dao-Project/blob/planning/diagram.png)
+[diagram 1](https://github.com/ca-lida/Class-Dao-Project/blob/main/diagram.png)
 
 If you would like to see more details, please check the following diagram:
 
