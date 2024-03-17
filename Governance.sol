@@ -105,7 +105,7 @@ contract ProposalVoting is Ownable, AccessControl {
             submissionTime[proposalIds[i]] = currentTime;
             totalProposals++;
             emit ProposalSubmitted(proposalIds[i]);
-        }
+        }}
 
     /**
      * @dev Allows COUNTRY to make proposals (child proposal) after initial proposal by expert comitee
