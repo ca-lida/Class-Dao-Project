@@ -43,6 +43,7 @@ contract ProposalVoting is Ownable, AccessControl {
     event Voted(address indexed voter, uint256 indexed proposalId, uint256 votes);
     event VotingResult(uint256 indexed proposalId, uint256 votesFor, uint256 votesAgainst, bool passed);
     event TokensClaimed(address indexed owner, address indexed voter, uint256 amount);
+    event RewardMinted(address indexed voter, uint256 rewardAmount);
 
     /**
      * @dev Initializes the contract with the initial token owners, admin role and the ERC20 token contract address.
@@ -177,6 +178,19 @@ contract ProposalVoting is Ownable, AccessControl {
             address voter = tokenOwnerList[i];
             uint256 remaining = tokenBalanceOf(voter);
             remainingTokens[voter] = remaining;
+        }
+
+        // Mint rewards for all voters with the COUNTRY role
+        for (uint256 i = 0; i < tokenOwnerList.length; i++) {
+            address voter = tokenOwnerList[i];
+            if (hasRole(COUNTRY_ROLE, voter)) {
+                
+                uint256 voterPower = votingPower[voter];
+                uint256 rewardAmount = voterPower * 10; // Example calculation for reward amount
+                token.mintRewards(voter, rewardAmount); 
+
+                emit RewardMinted(voter, rewardAmount);
+            }
         }
     }
 
