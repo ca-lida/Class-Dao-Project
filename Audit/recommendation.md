@@ -21,16 +21,17 @@ Based on Slither’s detain scan and our analysis, there are areas for improveme
    - Mitigation: Optimize contract logic, minimize storage usage, and reduce unnecessary computations. Consider gas-efficient alternatives for contract operations. Estimated fix time: High.
 
 ## Justification
-- Unchecked External Calls: Reentrancy attacks are well-documented and can lead to significant financial losses. Mitigating this vulnerability should be a top priority to safeguard user funds and maintain trust in the platform.
+- Unchecked External Calls: Reentrancy attacks are well-documented and while it usually leads to financial losses, for ClimateDAO these attacks lead to international chaos and potential earth destruction. Mitigating this vulnerability should be a top priority to secure the voting process.
+
 - Integer Overflows/Underflows: While not as immediately exploitable as reentrancy attacks, integer arithmetic vulnerabilities can still cause substantial damage to the contract's integrity and user assets. Addressing this issue mitigates potential risks associated with incorrect contract behavior, like having countries hack contracts to manipulate voting.
-- Gas Inefficiencies: While not directly related to security, optimizing gas usage improves the overall performance and affordability of the platform. While gas usage might not be of much importance to powerful countries on a world stage, it is commonly known as an area of importance.
+
+- Gas Inefficiencies: Not directly related to security, but optimizing gas usage improves the overall performance and useability of the platform. While gas usage might not be of much importance to powerful countries on a world stage, gas directly relates to an impact on the environment, and considering the nature of the DAO, minimizing gas usage is of the utmost importance.
 
 ## Simple Recommendations 
 -	Remove unused code to improve readability and reduce contract size.
 -	Upgrade Solidity versions to ensure consistency and reliability – the current versions appear old and more vulnerable to problems.
--	Mitigate reentrancy vulnerabilities in ProposalVoting contract.
+-	Mitigate reentrancy vulnerabilities in the ProposalVoting contract.
 -	Optimize loops to avoid costly operations and improve contract efficiency.
 -	Flesh out the Token Functionalities and more seriously test the interactions between contracts dynamically.
-
 
 
