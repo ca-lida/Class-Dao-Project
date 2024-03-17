@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "node_modules/@openzeppelin/contracts/token/ERC777/ERC777.sol";
+import "node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "node_modules/@openzeppelin/contracts/access/Ownable.sol";
 
-/// @title MyToken - Custom ERC777 Token Contract with Voting Power Delegation
-/// @dev This contract is based ERC777 token standard, including delegation of voting power
-contract MyToken is ERC777, Ownable {
-    uint256 public constant INITIAL_VOTING_POWER = 1;
+/// @title MyToken - Custom ERC20 Token Contract with Voting Power Delegation
+/// @dev This contract is based on the ERC20 token standard, including delegation of voting power
+contract MyToken is ERC20, Ownable {
     // store the voting power of each addresses
     mapping(address => uint256) public votingPower;
 
@@ -28,14 +27,12 @@ contract MyToken is ERC777, Ownable {
 
     /// @dev Constructor to initialize the token.
     /// @param initialSupply The initial supply of tokens.
-    /// @param defaultOperators The default operators for the token.
     /// @param initialOwner The initial owner of the contract.
     constructor(
         uint256 initialSupply,
-        address[] memory defaultOperators,
         address initialOwner // Add initialOwner parameter
-    ) ERC777("MyToken", "MTK", defaultOperators) Ownable(initialOwner) {
-        _mint(msg.sender, initialSupply, "", "");
+    ) ERC20("MyToken", "MTK") Ownable(initialOwner) {
+        _mint(msg.sender, initialSupply);
         votingPower[msg.sender] = initialSupply;
     }
 
@@ -45,10 +42,10 @@ contract MyToken is ERC777, Ownable {
         require(to != address(0), "Invalid delegate address");
         require(to != msg.sender, "Cannot delegate to yourself");
 
-        uint256 senderPower = votingPower[msg.sender];
-        require(senderPower > 0, "Sender has no voting power");
+        uint256 senderBalance = balanceOf(msg.sender);
+        require(senderBalance > 0, "Sender has no balance");
 
-        votingPower[to] += senderPower;
+        votingPower[to] += senderBalance;
         votingPower[msg.sender] = 0;
 
         emit Delegate(msg.sender, to);
@@ -56,11 +53,11 @@ contract MyToken is ERC777, Ownable {
 
     /// @dev Function to revoke previously delegated voting power.
     function revokeDelegate() external {
-        uint256 senderPower = votingPower[msg.sender];
-        require(senderPower > 0, "Sender has no voting power");
+        uint256 senderBalance = balanceOf(msg.sender);
+        require(senderBalance > 0, "Sender has no balance");
 
-        // The token voting power is reset to its inital value
-        votingPower[msg.sender] = INITIAL_VOTING_POWER;
+        // The token voting power is reset to its balance
+        votingPower[msg.sender] = senderBalance;
         emit Delegate(msg.sender, address(0));
     }
 
@@ -76,7 +73,7 @@ contract MyToken is ERC777, Ownable {
         uint256 rewardAmount = voterPower * 10; // Arbitrarily set to 10
 
         // Mint tokens as rewards
-        _mint(voter, rewardAmount, "", "");
+        _mint(voter, rewardAmount);
 
         emit RewardMinted(voter, rewardAmount);
     }

@@ -1,6 +1,6 @@
 pragma solidity ^0.8.0;
 
-import "forge-std/Test.sol";
+import "forge-std/src/Test.sol";
 import "Token.sol";
 import {ProposalVoting} from "Governance.sol";
 

@@ -5,7 +5,7 @@ import "node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "node_modules/@openzeppelin/contracts/utils/math/Math.sol";
 import "node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "node_modules/@openzeppelin/contracts/access/AccessControl.sol";
-import "Token.sol";
+import {MyToken} from "Token.sol";
 
 /**
  * @title ProposalVoting
@@ -14,7 +14,7 @@ import "Token.sol";
 contract ProposalVoting is Ownable, AccessControl {
     using Math for uint256;
 
-    Token public myTokenContract;
+    MyToken public myTokenContract;
 
     struct Proposal {
         uint256 votes_for; // Total number of votes received for the proposal
@@ -74,7 +74,8 @@ contract ProposalVoting is Ownable, AccessControl {
 
     /// @dev access mintRewards function from token contract
     function rewardVoter(address voter, uint256 rewardAmount) internal {
-        myTokenContract.mintRewards(voter, rewardAmount);
+        //removing reward amount as calculated in token - not ideal
+        myTokenContract.mintRewards(voter);
     }
 
     /**
@@ -201,7 +202,7 @@ contract ProposalVoting is Ownable, AccessControl {
                 uint256 voterPower = getVotingPower(voter); // Use getVotingPower to access voting power
                 if (voterPower > 0) {
                     // Corrected to use myTokenContract.mintRewards directly
-                    myTokenContract.mintRewards(voter, voterPower * 10); // Example reward calculation
+                    myTokenContract.mintRewards(voter); // Example reward calculation - 10x voting power in token contract, change if required - not implementing the reward calculation into the function directly
                     emit RewardMinted(voter, voterPower * 10);
                 }
             }
