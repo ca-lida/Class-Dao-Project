@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "node_modules/@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title MyToken
 /// @dev A custom ERC20 token contract with voting power delegation and banning of addresses.
@@ -28,7 +28,6 @@ contract MyToken is Ownable, ERC20 {
     }
 
     /// @dev Overrides the transfer function to update voting power and check banned addresses.
-    /// @param sender The sender of the tokens.
     /// @param recipient The recipient of the tokens.
     /// @param amount The amount of tokens to transfer.
     function transfer(address recipient, uint256 amount) public override returns (bool) {
