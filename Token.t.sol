@@ -1,58 +1,43 @@
-const MyToken = artifacts.require("MyToken");
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-/**
- * Contract tests for MyToken.
- */
-contract("MyToken", (accounts) => {
-  let myToken;
-  const initialSupply = 1000;
-  const defaultOperators = [];
-  const initialOwner = accounts[0];
+import "forge-std/Test.sol";
+import "Token.sol";
 
-  beforeEach(async () => {
-    myToken = await MyToken.new(initialSupply, defaultOperators, initialOwner);
-  });
+contract MyTokenTest is Test {
+    MyToken myToken;
+    ErrorsTest testContract;
 
-  /**
-   * Test case: should mint initial supply to the owner.
-   */
-  it("should mint initial supply to the owner", async () => {
-    const balance = await myToken.balanceOf(initialOwner);
-    assert.equal(balance.toString(), initialSupply.toString());
-  });
+    function setUp() public {
+        myToken = new MyToken();
+        testContract = new ErrorsTest();
+    }
 
-  /**
-   * Test case: should delegate voting power.
-   */
-  it("should delegate voting power", async () => {
-    await myToken.delegate(accounts[1], { from: initialOwner });
-    const votingPower = await myToken.votingPower(accounts[1]);
-    assert.equal(votingPower.toString(), initialSupply.toString());
-  });
+    // Test to check the initial balance of the deployer
+    function testInitialBalance() public {
+        Assert.equal(myToken.balanceOf(address(this)), 1000, "Initial balance is incorrect");
+    }
 
-  /**
-   * Test case: should revoke delegated voting power.
-   */
-  it("should revoke delegated voting power", async () => {
-    await myToken.delegate(accounts[1], { from: initialOwner });
-    await myToken.revokeDelegate({ from: initialOwner });
-    /**
-     * Retrieves the voting power of the initial owner.
-     *
-     * @param {string} initialOwner - The address of the initial owner.
-     * @returns {Promise<number>} The voting power of the initial owner.
-     */
-    const votingPower = await myToken.votingPower(initialOwner);
-    assert.equal(votingPower.toString(), "1");
-  });
+    // Test to check the delegate function
+    function testDelegate() public {
+        address delegate = TestsAccounts.getAccount(1);
+        myToken.delegate(delegate);
+        Assert.equal(myToken.votingPower(delegate), 1000, "Delegation is incorrect");
+    }
 
-  /**
-   * Test case: should mint rewards for voters.
-   */
-  it("should mint rewards for voters", async () => {
-    await myToken.delegate(accounts[1], { from: initialOwner });
-    await myToken.mintRewards(accounts[1], { from: initialOwner });
-    const balance = await myToken.balanceOf(accounts[1]);
-    assert.equal(balance.toString(), (initialSupply * 10).toString());
-  });
-});
+    // Test to check the revokeDelegate function
+    function testRevokeDelegate() public {
+        myToken.revokeDelegate();
+        Assert.equal(myToken.votingPower(address(this)), 1, "Revocation is incorrect");
+    }
+
+    // Test to check the mintRewards function
+    function testMintRewards() public {
+        address voter = TestsAccounts.getAccount(2);
+        myToken.delegate(voter);
+        myToken.mintRewards(voter);
+        Assert.equal(myToken.balanceOf(voter), 10000, "Minting rewards is incorrect");
+    }
+}
+
+
