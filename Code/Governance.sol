@@ -176,7 +176,7 @@ contract ProposalVoting is Ownable, AccessControl {
         // Calculate remaining tokens for each voter
         for (uint256 i = 0; i < tokenOwnerList.length; i++) {
             address voter = tokenOwnerList[i];
-            uint256 remaining = tokenBalanceOf(voter);
+            uint256 remaining = token.BalanceOf(voter);
             remainingTokens[voter] = remaining;
         }
 
@@ -186,9 +186,16 @@ contract ProposalVoting is Ownable, AccessControl {
             if (hasRole(COUNTRY_ROLE, voter)) {
                 
                 uint256 voterPower = votingPower[voter];
-                uint256 rewardAmount = voterPower * 10; // Example calculation for reward amount
-                token.mintRewards(voter, rewardAmount); 
+                uint256 rewardAmount;
 
+                /// @dev Adjust reward amount based on remaining voting power
+                if (voterPower == 0) {
+                    rewardAmount = 100; /// @dev Mint 100 tokens if no voting power left
+                } else {
+                    rewardAmount = 100 - voterPower; /// @dev Mint (100 - votingPower) tokens if some voting power left (less tokens because didn't play the game)
+                }
+
+                token.mintRewards(voter, rewardAmount);
                 emit RewardMinted(voter, rewardAmount);
             }
         }
