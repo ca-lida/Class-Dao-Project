@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title MyToken
 /// @dev A custom ERC20 token contract with voting power delegation and banning of addresses.
-contract MyToken is ERC20, Ownable {
+contract MyToken is Ownable, ERC20 {
     uint256 public constant INITIAL_VOTING_POWER = 1;
     mapping(address => uint256) public votingPower;
     mapping(address => bool) public bannedAddresses;
@@ -31,9 +31,28 @@ contract MyToken is ERC20, Ownable {
     /// @param sender The sender of the tokens.
     /// @param recipient The recipient of the tokens.
     /// @param amount The amount of tokens to transfer.
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual override {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        require(!bannedAddresses[msg.sender], "Sender is banned");
+        require(!bannedAddresses[recipient], "Recipient is banned");
+
+        uint256 senderPower = votingPower[msg.sender];
+        uint256 recipientPower = votingPower[recipient];
+
+        if (senderPower > 0) {
+            votingPower[msg.sender] -= amount;
+        }
+        if (recipientPower > 0) {
+            votingPower[recipient] += amount;
+        }
+
+        return super.transfer(recipient, amount);
+    }
+
+    /// @dev Overrides the transferFrom function to update voting power and check banned addresses.
+    /// @param sender The sender of the tokens.
+    /// @param recipient The recipient of the tokens.
+    /// @param amount The amount of tokens to transfer.
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
         require(!bannedAddresses[sender], "Sender is banned");
         require(!bannedAddresses[recipient], "Recipient is banned");
 
@@ -47,7 +66,7 @@ contract MyToken is ERC20, Ownable {
             votingPower[recipient] += amount;
         }
 
-        super._transfer(sender, recipient, amount);
+        return super.transferFrom(sender, recipient, amount);
     }
 
     /// @dev Delegates voting power to another address.
