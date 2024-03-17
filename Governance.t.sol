@@ -4,7 +4,7 @@ import "forge-std/src/Test.sol";
 import "Token.sol";
 import {ProposalVoting} from "Governance.sol";
 
-contract TestProposalVoting {
+contract TestProposalVoting is Test {
     ProposalVoting proposalVoting;
 
     // This function runs before each test case to set up the contract

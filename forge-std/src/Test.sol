@@ -24,7 +24,7 @@ import {Vm} from "./Vm.sol";
 
 // 📦 BOILERPLATE
 import {TestBase} from "./Base.sol";
-import {DSTest} from "ds-test/test.sol";
+import {DSTest} from "./ds-test/test.sol";
 
 // ⭐️ TEST
 abstract contract Test is TestBase, DSTest, StdAssertions, StdChains, StdCheats, StdInvariant, StdUtils {
