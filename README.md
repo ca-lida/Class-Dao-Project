@@ -81,8 +81,10 @@ More information on the tests with Foundry are available [here](https://book.get
 While a list of basic tests have been provided for both contract, they do not test all required potential vulnerabilities, hence we do not recommend relying on them.
 
 ### 3. Contract Address
-MyToken (MTK) : ETHERSCAN TOKEN CONTRACT (WITH 18 DECIMALS) [0x19B46757a8b27BA691e2997b06b2B262cDAA5286](https://sepolia.etherscan.io/address/0x19B46757a8b27BA691e2997b06b2B262cDAA5286)
+MyToken (MTK): ETHERSCAN TOKEN CONTRACT (WITH 18 DECIMALS) [0x19B46757a8b27BA691e2997b06b2B262cDAA5286](https://sepolia.etherscan.io/address/0x19B46757a8b27BA691e2997b06b2B262cDAA5286)
 MAX TOTAL SUPPLY: 1,000 MTK
+
+ProposalVoting: [0x2e9B220B4Ad6E1C3584Fc0B2a2e7639446DB8BaA](https://sepolia.etherscan.io/address/0x2e9B220B4Ad6E1C3584Fc0B2a2e7639446DB8BaA)
 
 If you would like to deploy it, you can use the following command
 
